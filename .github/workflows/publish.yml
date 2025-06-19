@@ -3,7 +3,7 @@ name: Release & Publish
 on:
   push:
     tags:
-      - "v*.*.*" # Triggers on version tags like v1.2.3
+      - "v*.*.*"
 
 jobs:
   release:
@@ -18,6 +18,11 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org/"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
       - name: Install dependencies
         run: pnpm install
