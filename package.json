@@ -1,5 +1,5 @@
 {
-  "name": "@mckinnon/log-dumper",
+  "name": "@stevenmckinnon/log-dumper",
   "version": "1.0.0",
   "description": "A simple logger for React applications",
   "main": "dist/index.umd.js",

@@ -13,7 +13,7 @@ A TypeScript library for capturing user actions and errors in React components, 
 ## Installation
 
 ```sh
-pnpm add @mckinnon/log-dumper
+pnpm add @stevenmckinnon/log-dumper
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ pnpm add @mckinnon/log-dumper
 ### 1. Wrap your app with the `LogDumper`
 
 ```tsx
-import { LogDumper } from "@mckinnon/log-dumper";
+import { LogDumper } from "@stevenmckinnon/log-dumper";
 
 <LogDumper>
   <App />
@@ -31,7 +31,7 @@ import { LogDumper } from "@mckinnon/log-dumper";
 ### 2. Log actions in your components
 
 ```tsx
-import { useLogger } from "@mckinnon/log-dumper";
+import { useLogger } from "@stevenmckinnon/log-dumper";
 
 const MyButton = () => {
   const { logAction } = useLogger();
