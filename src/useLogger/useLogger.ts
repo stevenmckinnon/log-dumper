@@ -1,4 +1,4 @@
-import { useLoggerContext } from '../LoggerProvider/LoggerProvider';
+import { useLoggerContext } from '../LogDumper/LogDumper';
 
 export const useLogger = () => {
   const logger = useLoggerContext();

@@ -1,2 +1,1 @@
-export { LoggerProvider } from "./LoggerProvider";
-export { useLogger } from "./useLogger";
+export { LogDumper } from "./LogDumper";
