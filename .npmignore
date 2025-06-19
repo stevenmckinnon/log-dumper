@@ -1,0 +1,7 @@
+demo/
+tests/
+src/
+*.test.*
+*.log
+vite.config.ts
+vitest.config.ts

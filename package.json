@@ -1,0 +1,37 @@
+{
+  "name": "@mckinnon/log-dumper",
+  "version": "1.0.0",
+  "description": "A simple logger for React applications",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "vite build",
+    "prepublishOnly": "pnpm run build",
+    "test": "vitest"
+  },
+  "keywords": [
+    "logger",
+    "react",
+    "typescript"
+  ],
+  "author": "Steve McKinnon",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/testing-library__react": "^10.2.0",
+    "@vitest/ui": "^3.2.4",
+    "react-dom": "^19.1.0",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^3.2.4"
+  }
+}
