@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- 736ba74: Attempting to fix publishing
+
 ## 1.0.1
 
 ### Patch Changes
