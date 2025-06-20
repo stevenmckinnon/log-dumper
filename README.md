@@ -7,6 +7,7 @@ A TypeScript library for capturing user actions and errors in React components, 
 - Log user actions and errors
 - Download logs as a JSON file
 - Easy React integration (Provider + Hook)
+- Configurable maximum logs to keep
 - Written in TypeScript
 - Tested with Vitest
 
@@ -18,14 +19,14 @@ pnpm add @stevenmckinnon/log-dumper
 
 ## Usage
 
-### 1. Wrap your app with the `LogDumper`
+### 1. Wrap your app with the `LogDumper` provider
 
 ```tsx
 import { LogDumper } from "@stevenmckinnon/log-dumper";
 
-<LogDumper>
+<LogDumper maxLogs={100}>
   <App />
-</LogDumper>;
+</LogDumper>
 ```
 
 ### 2. Log actions in your components
@@ -35,7 +36,7 @@ import { useLogger } from "@stevenmckinnon/log-dumper";
 
 const MyButton = () => {
   const { logAction } = useLogger();
-  return <button onClick={() => logAction("Button clicked")}>Click me</button>;
+  return <button onClick={() => logAction('Button clicked')}>Click me</button>;
 };
 ```
 
@@ -43,8 +44,15 @@ const MyButton = () => {
 
 ```tsx
 const { downloadLog } = useLogger();
-<button onClick={downloadLog}>Download Log</button>;
+<button onClick={() => downloadLog()}>Download Log</button>
 ```
+
+---
+
+## Logger Options
+
+You can pass options to the `LogDumper` provider:
+- `maxLogs` (number): Maximum number of logs to keep in memory (oldest logs are dropped).
 
 ---
 

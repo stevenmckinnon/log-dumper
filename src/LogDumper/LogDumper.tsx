@@ -1,10 +1,14 @@
-import React, { createContext, useRef, useContext, ReactNode } from "react";
-import { Logger } from "../logger";
+import { createContext, useRef, useContext, ReactNode } from "react";
+import { Logger, LoggerOptions } from "../logger";
 
 const LoggerContext = createContext<Logger | null>(null);
 
-export const LogDumper: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const loggerRef = useRef<Logger>(new Logger());
+export interface LogDumperProps extends LoggerOptions {
+  children: ReactNode;
+}
+
+export const LogDumper = ({ children, ...loggerOptions }: LogDumperProps) => {
+  const loggerRef = useRef<Logger>(new Logger(loggerOptions));
   return (
     <LoggerContext.Provider value={loggerRef.current}>
       {children}
@@ -15,6 +19,6 @@ export const LogDumper: React.FC<{ children: ReactNode }> = ({ children }) => {
 export const useLoggerContext = () => {
   const ctx = useContext(LoggerContext);
   if (!ctx)
-    throw new Error("useLoggerContext must be used within a LoggerProvider");
+    throw new Error("useLoggerContext must be used within a LogDumper");
   return ctx;
 };

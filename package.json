@@ -5,11 +5,18 @@
   "main": "dist/index.umd.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevenmckinnon/log-dumper.git"
+  },
   "scripts": {
     "build": "vite build",
     "prepublishOnly": "pnpm run build",
     "test": "vitest",
     "changeset": "changeset"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "logger",
