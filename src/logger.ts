@@ -6,8 +6,23 @@ type LogEntry = {
   errorStack?: string;
 };
 
+export interface LoggerOptions {
+  maxLogs?: number;
+}
+
 export class Logger {
   private logs: LogEntry[] = [];
+  private maxLogs?: number;
+
+  constructor(options?: LoggerOptions) {
+    this.maxLogs = options?.maxLogs;
+  }
+
+  private trimLogs() {
+    if (this.maxLogs && this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(-this.maxLogs);
+    }
+  }
 
   logAction(message: string, context?: Record<string, any>) {
     this.logs.push({
@@ -16,6 +31,7 @@ export class Logger {
       timestamp: new Date().toISOString(),
       context,
     });
+    this.trimLogs();
   }
 
   logError(error: Error, context?: Record<string, any>) {
@@ -26,6 +42,7 @@ export class Logger {
       context,
       errorStack: error.stack,
     });
+    this.trimLogs();
   }
 
   getLogs() {

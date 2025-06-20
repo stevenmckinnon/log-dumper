@@ -32,4 +32,17 @@ describe('Logger', () => {
     logger.clearLogs();
     expect(logger.getLogs().length).toBe(0);
   });
+
+  it('respects maxLogs option', () => {
+    const logger = new Logger({ maxLogs: 3 });
+    logger.logAction('A');
+    logger.logAction('B');
+    logger.logAction('C');
+    logger.logAction('D');
+    const logs = logger.getLogs();
+    expect(logs.length).toBe(3);
+    expect(logs[0].message).toBe('B');
+    expect(logs[1].message).toBe('C');
+    expect(logs[2].message).toBe('D');
+  });
 });
