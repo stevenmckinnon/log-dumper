@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+### Patch Changes
+
+- 6c98155: Added new maxLogs property
+
 ## 1.0.2
 
 ### Patch Changes
