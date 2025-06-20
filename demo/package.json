@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mckinnon/log-dumper": "link:..",
+    "@stevenmckinnon/log-dumper": "link:..",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

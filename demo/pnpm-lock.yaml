@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@mckinnon/log-dumper':
+      '@stevenmckinnon/log-dumper':
         specifier: link:..
         version: link:..
       react:
