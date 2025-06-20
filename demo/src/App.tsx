@@ -1,26 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { LoggerProvider, useLogger } from '@mckinnon/log-dumper'
+import { useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
+import { LogDumper, useLogger } from "@stevenmckinnon/log-dumper";
 
 const DemoContent = () => {
-  const [count, setCount] = useState(0)
-  const { logAction, logError, downloadLog } = useLogger()
+  const [count, setCount] = useState(0);
+  const { logAction, logError, downloadLog } = useLogger();
 
   const handleClick = () => {
-    logAction('Increment button clicked', { count })
-    setCount((c) => c + 1)
-  }
+    logAction("Increment button clicked", { count });
+    setCount((c) => c + 1);
+  };
 
   const handleError = () => {
     try {
-      throw new Error('Demo error!')
+      throw new Error("Demo error!");
     } catch (e) {
-      logError(e as Error, { count })
-      alert('Error logged!')
+      logError(e as Error, { count });
+      alert("Error logged!");
     }
-  }
+  };
 
   return (
     <>
@@ -34,9 +34,7 @@ const DemoContent = () => {
       </div>
       <h1>Vite + React + LoggerDumper</h1>
       <div className="card">
-        <button onClick={handleClick}>
-          count is {count}
-        </button>
+        <button onClick={handleClick}>count is {count}</button>
         <button onClick={handleError} style={{ marginLeft: 8 }}>
           Trigger Error
         </button>
@@ -51,13 +49,13 @@ const DemoContent = () => {
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
-}
+  );
+};
 
 const App = () => (
-  <LoggerProvider>
+  <LogDumper>
     <DemoContent />
-  </LoggerProvider>
-)
+  </LogDumper>
+);
 
-export default App
+export default App;
