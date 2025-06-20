@@ -15,9 +15,6 @@
     "test": "vitest",
     "changeset": "changeset"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "keywords": [
     "logger",
     "react",
