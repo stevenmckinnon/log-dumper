@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4
+
+### Patch Changes
+
+- 95f4e6c: Reverted back to React 18.3.1
+
 ## 1.0.3
 
 ### Patch Changes
