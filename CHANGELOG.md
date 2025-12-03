@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- d1b8def: Style updates to DevTools
+- 5ca9997: Added light theme and make use of prop
+
 ## 1.1.0
 
 ### Minor Changes
