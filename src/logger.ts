@@ -241,4 +241,16 @@ export class Logger<TContext = Record<string, unknown>> {
   getName(): string | undefined {
     return this.name;
   }
+
+  getForwardToConsole(): boolean {
+    return this.forwardToConsole;
+  }
+
+  getCaptureMetadata(): boolean {
+    return this.captureMetadata;
+  }
+
+  getMaxLogs(): number | undefined {
+    return this.maxLogs;
+  }
 }

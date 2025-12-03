@@ -64,20 +64,25 @@ export const useNamedLoggersContext = () => {
 /**
  * Get or create a named logger instance
  * Named loggers share the same registry but have separate log streams
+ * Named loggers inherit configuration from the parent LogDumper's logger unless explicitly overridden
  */
 export const useNamedLogger = (name: string, options?: Omit<LoggerOptions, 'name'>) => {
   const namedLoggers = useNamedLoggersContext();
   const defaultLogger = useLoggerContext();
   
   if (!namedLoggers.has(name)) {
-    // Inherit options from default logger but allow overrides
+    // Inherit options from default logger, allow explicit overrides
     namedLoggers.set(
       name,
       new Logger({
+        // Inherit from parent logger's configuration
+        forwardToConsole: defaultLogger.getForwardToConsole(),
+        captureMetadata: defaultLogger.getCaptureMetadata(),
+        maxLogs: defaultLogger.getMaxLogs(),
+        // Apply any explicit overrides from options
         ...options,
+        // Always set the name for this named logger
         name,
-        // If not specified, inherit forwardToConsole from default logger context
-        forwardToConsole: options?.forwardToConsole,
       })
     );
   }
