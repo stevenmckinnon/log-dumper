@@ -12,7 +12,13 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       // Externalize all React-related packages to avoid bundling them
-      external: ["react", "react-dom", "react/jsx-runtime"],
+      external: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "motion/react",
+        "motion",
+      ],
       output: {
         globals: {
           react: "React",
@@ -24,17 +30,15 @@ export default defineConfig({
         // Suppress "use client" directive warnings from framer-motion
         // These are harmless Next.js directives that are safely ignored when bundling
         if (
-          (warning.code === 'MODULE_LEVEL_DIRECTIVE' || warning.id?.includes('framer-motion')) &&
-          warning.message?.includes('use client')
+          (warning.code === "MODULE_LEVEL_DIRECTIVE" ||
+            warning.id?.includes("framer-motion")) &&
+          warning.message?.includes("use client")
         ) {
           return;
         }
         warn(warning);
       },
     },
-    // Suppress verbose warnings about "use client" directives in framer-motion
-    // These are harmless Next.js directives that don't affect functionality
-    logLevel: 'warn',
   },
   plugins: [dts({ insertTypesEntry: true })],
   test: {

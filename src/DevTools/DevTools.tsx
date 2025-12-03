@@ -215,10 +215,15 @@ export const LogDevTools = ({
       
       // Check if the pressed key matches the shortcut
       const keyMatches = e.key.toLowerCase() === shortcut.key.toLowerCase();
-      const metaMatches = shortcut.metaKey ? (e.metaKey || e.ctrlKey) : true; // metaKey = Cmd on Mac, Ctrl on Windows
-      const ctrlMatches = shortcut.ctrlKey ? e.ctrlKey : true;
-      const shiftMatches = shortcut.shiftKey ? e.shiftKey : !e.shiftKey;
-      const altMatches = shortcut.altKey ? e.altKey : !e.altKey;
+      // metaKey is cross-platform: Cmd on Mac, Ctrl on Windows
+      const metaMatches = shortcut.metaKey === undefined 
+        ? true 
+        : shortcut.metaKey 
+          ? (e.metaKey || e.ctrlKey) 
+          : (!e.metaKey && !e.ctrlKey);
+      const ctrlMatches = shortcut.ctrlKey === undefined ? true : shortcut.ctrlKey === e.ctrlKey;
+      const shiftMatches = shortcut.shiftKey === undefined ? true : shortcut.shiftKey === e.shiftKey;
+      const altMatches = shortcut.altKey === undefined ? true : shortcut.altKey === e.altKey;
 
       if (keyMatches && metaMatches && ctrlMatches && shiftMatches && altMatches) {
         e.preventDefault();
