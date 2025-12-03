@@ -11,10 +11,13 @@ export default defineConfig({
     },
     outDir: "dist",
     rollupOptions: {
-      external: ["react"],
+      // Externalize all React-related packages to avoid bundling them
+      external: ["react", "react-dom", "react/jsx-runtime"],
       output: {
         globals: {
           react: "React",
+          "react-dom": "ReactDOM",
+          "react/jsx-runtime": "jsxRuntime",
         },
       },
     },
