@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
-import { useLoggerContext, useNamedLogger } from '../LogDumper/LogDumper';
-import { LogLevel, LogEntry, LoggerOptions, LogSubscriber } from '../logger';
+import { useMemo } from 'react';
+import { useLoggerContext, useNamedLoggersContext } from '../LogDumper/LogDumper';
+import { Logger, LogLevel, LogEntry, LoggerOptions, LogSubscriber } from '../logger';
 
 export interface UseLoggerReturn<TContext = Record<string, unknown>> {
   /** Log an action (alias for logInfo, kept for backwards compatibility) */
@@ -52,14 +52,35 @@ export const useLogger = <TContext = Record<string, unknown>>(
   name?: string,
   options?: Omit<LoggerOptions, 'name'>
 ): UseLoggerReturn<TContext> => {
-  // Get the appropriate logger based on whether a name is provided
+  // Always call both hooks unconditionally to satisfy Rules of Hooks
   const defaultLogger = useLoggerContext();
-  
-  // For named loggers, we need to call the hook conditionally which isn't ideal
-  // But since this is a hook composition, we'll handle it differently
-  const logger = name 
-    ? useNamedLogger(name, options)
-    : defaultLogger;
+  const namedLoggers = useNamedLoggersContext();
+
+  // Determine which logger to use
+  const logger = useMemo(() => {
+    if (!name) {
+      return defaultLogger;
+    }
+
+    // Get or create a named logger instance
+    if (!namedLoggers.has(name)) {
+      namedLoggers.set(
+        name,
+        new Logger({
+          // Inherit from parent logger's configuration
+          forwardToConsole: defaultLogger.getForwardToConsole(),
+          captureMetadata: defaultLogger.getCaptureMetadata(),
+          maxLogs: defaultLogger.getMaxLogs(),
+          // Apply any explicit overrides from options
+          ...options,
+          // Always set the name for this named logger
+          name,
+        })
+      );
+    }
+
+    return namedLoggers.get(name)!;
+  }, [name, defaultLogger, namedLoggers, options]);
 
   // Memoize the return object to prevent unnecessary re-renders
   return useMemo(() => ({

@@ -291,7 +291,7 @@ export const LogDevTools = ({
       const searchLower = search.toLowerCase();
       return (
         log.message.toLowerCase().includes(searchLower) ||
-        JSON.stringify(log.context).toLowerCase().includes(searchLower)
+        (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
       );
     }
     return true;
