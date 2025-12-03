@@ -350,7 +350,7 @@ const App = () => (
     )}
   >
     <DemoContent />
-    <LogDevTools position="bottom-right" defaultCollapsed maxHeight={350} />
+    <LogDevTools position="bottom-right" defaultVisible defaultCollapsed maxHeight={350} />
   </LogDumper>
 );
 
