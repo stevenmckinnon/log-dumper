@@ -152,7 +152,14 @@ import { LogDumper, LogDevTools } from "@stevenmckinnon/log-dumper";
   <LogDevTools
     position="bottom-right"    // 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
     defaultCollapsed={true}    // Start collapsed
+    defaultVisible={false}     // Panel visibility on mount
     maxHeight={400}            // Max panel height in pixels
+    theme="dark"               // 'dark' | 'light'
+    keyboardShortcut={{        // Customize keyboard shortcut (or false to disable)
+      key: 'd',
+      metaKey: true,
+      shiftKey: true
+    }}
   />
 </LogDumper>
 ```
@@ -164,6 +171,8 @@ Features:
 - Expand entries to view context, metadata, and stack traces
 - Download and clear logs
 - Badge counts for errors and warnings
+- Light and dark themes
+- Customizable keyboard shortcut to toggle visibility (default: Cmd/Ctrl+Shift+D)
 
 ---
 
@@ -379,9 +388,14 @@ Returns logging functions bound to the LogDumper context.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `position` | `string` | `'bottom-right'` | Panel position |
-| `defaultCollapsed` | `boolean` | `true` | Start collapsed |
-| `maxHeight` | `number` | `400` | Max panel height |
+| `position` | `string` | `'bottom-right'` | Panel position: `'bottom-right'`, `'bottom-left'`, `'top-right'`, `'top-left'` |
+| `defaultCollapsed` | `boolean` | `true` | Start collapsed when visible |
+| `defaultVisible` | `boolean` | `false` | Whether the DevTools panel is visible by default |
+| `maxHeight` | `number` | `400` | Max panel height in pixels |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Theme variant |
+| `keyboardShortcut` | `object \| false` | `{ key: 'd', metaKey: true, shiftKey: true }` | Keyboard shortcut to toggle visibility (Cmd/Ctrl+Shift+D by default). Set to `false` to disable |
+| `className` | `string` | `''` | Custom class name for the container |
+| `style` | `React.CSSProperties` | `undefined` | Custom styles for the container |
 
 ---
 

@@ -22,7 +22,15 @@ const CSS_CONTENT = `
   --ld-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ld-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   
-  /* Dark theme (default) */
+  /* Sizing */
+  --ld-radius-sm: 4px;
+  --ld-radius-md: 6px;
+  --ld-radius-lg: 12px;
+}
+
+/* Dark theme (default) */
+.ld-devtools--dark {
+  /* Dark theme colors */
   --ld-bg-primary: #09090b;
   --ld-bg-secondary: #18181b;
   --ld-bg-tertiary: #27272a;
@@ -55,14 +63,49 @@ const CSS_CONTENT = `
   --ld-error-text: #f87171;
   --ld-error-badge: #ef4444;
   
-  /* Sizing */
-  --ld-radius-sm: 4px;
-  --ld-radius-md: 6px;
-  --ld-radius-lg: 12px;
-  
   /* Shadows */
   --ld-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   --ld-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Light theme */
+.ld-devtools--light {
+  /* Light theme colors */
+  --ld-bg-primary: #ffffff;
+  --ld-bg-secondary: #f4f4f5;
+  --ld-bg-tertiary: #e4e4e7;
+  --ld-bg-hover: #d4d4d8;
+  
+  --ld-border: #e4e4e7;
+  --ld-border-subtle: #d4d4d8;
+  
+  --ld-text-primary: #09090b;
+  --ld-text-secondary: #52525b;
+  --ld-text-muted: #a1a1aa;
+  
+  --ld-accent: #8b5cf6;
+  --ld-accent-hover: #7c3aed;
+  
+  /* Log level colors */
+  --ld-debug-bg: rgba(113, 113, 122, 0.08);
+  --ld-debug-text: #52525b;
+  --ld-debug-badge: #71717a;
+  
+  --ld-info-bg: rgba(59, 130, 246, 0.1);
+  --ld-info-text: #2563eb;
+  --ld-info-badge: #3b82f6;
+  
+  --ld-warn-bg: rgba(245, 158, 11, 0.12);
+  --ld-warn-text: #d97706;
+  --ld-warn-badge: #f59e0b;
+  
+  --ld-error-bg: rgba(239, 68, 68, 0.12);
+  --ld-error-text: #dc2626;
+  --ld-error-badge: #ef4444;
+  
+  /* Shadows */
+  --ld-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --ld-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* Base container */
@@ -73,6 +116,35 @@ const CSS_CONTENT = `
   color: var(--ld-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Default to dark theme if no theme class is specified */
+.ld-devtools:not(.ld-devtools--light):not(.ld-devtools--dark) {
+  --ld-bg-primary: #09090b;
+  --ld-bg-secondary: #18181b;
+  --ld-bg-tertiary: #27272a;
+  --ld-bg-hover: #3f3f46;
+  --ld-border: #27272a;
+  --ld-border-subtle: #3f3f46;
+  --ld-text-primary: #fafafa;
+  --ld-text-secondary: #a1a1aa;
+  --ld-text-muted: #71717a;
+  --ld-accent: #8b5cf6;
+  --ld-accent-hover: #7c3aed;
+  --ld-debug-bg: rgba(113, 113, 122, 0.1);
+  --ld-debug-text: #a1a1aa;
+  --ld-debug-badge: #52525b;
+  --ld-info-bg: rgba(59, 130, 246, 0.1);
+  --ld-info-text: #60a5fa;
+  --ld-info-badge: #3b82f6;
+  --ld-warn-bg: rgba(245, 158, 11, 0.1);
+  --ld-warn-text: #fbbf24;
+  --ld-warn-badge: #f59e0b;
+  --ld-error-bg: rgba(239, 68, 68, 0.1);
+  --ld-error-text: #f87171;
+  --ld-error-badge: #ef4444;
+  --ld-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --ld-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 /* Collapsed trigger button */
@@ -358,7 +430,8 @@ const CSS_CONTENT = `
 }
 
 .ld-entry-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ld-bg-hover);
+  opacity: 0.8;
 }
 
 .ld-entry-row--no-details {

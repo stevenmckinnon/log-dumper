@@ -190,6 +190,7 @@ export const LogDevTools = ({
   maxHeight = 400,
   className = '',
   style,
+  theme = 'dark',
   keyboardShortcut = defaultKeyboardShortcut,
 }: LogDevToolsProps) => {
   const logger = useLoggerContext();
@@ -408,7 +409,7 @@ export const LogDevTools = ({
   // Conditionally render content based on isVisible
   return (
     <div 
-      className={`ld-devtools ${className}`} 
+      className={`ld-devtools ld-devtools--${theme} ${className}`} 
       style={{
         ...containerStyle,
         // Hide completely when not visible, but keep component mounted
