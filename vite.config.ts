@@ -24,6 +24,8 @@ export default defineConfig({
           react: "React",
           "react-dom": "ReactDOM",
           "react/jsx-runtime": "jsxRuntime",
+          "motion/react": "MotionReact",
+          motion: "Motion",
         },
       },
       onwarn(warning, warn) {

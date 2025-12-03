@@ -290,11 +290,6 @@ export const LogDevTools = ({
   const errorCount = useMemo(() => logs.filter((l) => l.level === 'error').length, [logs]);
   const warnCount = useMemo(() => logs.filter((l) => l.level === 'warn').length, [logs]);
 
-  // Don't render anything if not visible (after ALL hooks)
-  if (!isVisible) {
-    return null;
-  }
-
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
     zIndex: 99999,
@@ -409,47 +404,58 @@ export const LogDevTools = ({
 
   const transformOrigin = getTransformOrigin();
 
+  // Always render the container to keep component mounted (for keyboard listener)
+  // Conditionally render content based on isVisible
   return (
-    <div className={`ld-devtools ${className}`} style={containerStyle}>
-      <AnimatePresence mode="wait" initial={false}>
-        {isCollapsed ? (
-          <motion.button
-            key="trigger"
-            className="ld-trigger"
-            onClick={() => setIsCollapsed(false)}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ 
-              duration: 0.15,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              transformOrigin,
-            }}
-          >
-            {triggerContent}
-          </motion.button>
-        ) : (
-          <motion.div
-            key="panel"
-            className="ld-panel"
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 5 }}
-            transition={{ 
-              duration: 0.2,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            style={{ transformOrigin }}
-          >
-            {panelContent}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div 
+      className={`ld-devtools ${className}`} 
+      style={{
+        ...containerStyle,
+        // Hide completely when not visible, but keep component mounted
+        display: isVisible ? undefined : 'none',
+      }}
+    >
+      {isVisible && (
+        <AnimatePresence mode="wait" initial={false}>
+          {isCollapsed ? (
+            <motion.button
+              key="trigger"
+              className="ld-trigger"
+              onClick={() => setIsCollapsed(false)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ 
+                duration: 0.15,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                transformOrigin,
+              }}
+            >
+              {triggerContent}
+            </motion.button>
+          ) : (
+            <motion.div
+              key="panel"
+              className="ld-panel"
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 5 }}
+              transition={{ 
+                duration: 0.2,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              style={{ transformOrigin }}
+            >
+              {panelContent}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 };
