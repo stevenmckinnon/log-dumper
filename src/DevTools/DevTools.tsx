@@ -1,50 +1,105 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useLoggerContext } from "../LogDumper/LogDumper";
-import { LogEntry, LogLevel } from "../logger";
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useLoggerContext } from '../LogDumper/LogDumper';
+import { LogEntry, LogLevel } from '../logger';
+import { injectStyles } from './styles';
 
 export interface LogDevToolsProps {
   /** Initial position of the panel */
-  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  /** Initial collapsed state */
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  /** Initial collapsed state when visible */
   defaultCollapsed?: boolean;
+  /** 
+   * Whether the DevTools panel is visible by default.
+   * Use keyboard shortcut to toggle visibility.
+   * @default false
+   */
+  defaultVisible?: boolean;
   /** Maximum height of the log panel */
   maxHeight?: number;
+  /** Custom class name for the container */
+  className?: string;
   /** Custom styles for the container */
   style?: React.CSSProperties;
+  /** Theme variant */
+  theme?: 'dark' | 'light';
+  /** 
+   * Keyboard shortcut to toggle visibility of the DevTools.
+   * Set to false to disable keyboard shortcut.
+   * @default { key: 'd', metaKey: true, shiftKey: true } (Cmd/Ctrl+Shift+D)
+   */
+  keyboardShortcut?: { key: string; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean } | false;
 }
 
-const levelColors: Record<LogLevel, string> = {
-  debug: "#6b7280",
-  info: "#3b82f6",
-  warn: "#f59e0b",
-  error: "#ef4444",
-};
-
-const levelBgColors: Record<LogLevel, string> = {
-  debug: "#f3f4f6",
-  info: "#eff6ff",
-  warn: "#fffbeb",
-  error: "#fef2f2",
-};
-
 const positionStyles: Record<string, React.CSSProperties> = {
-  "bottom-right": { bottom: 16, right: 16 },
-  "bottom-left": { bottom: 16, left: 16 },
-  "top-right": { top: 16, right: 16 },
-  "top-left": { top: 16, left: 16 },
+  'bottom-right': { bottom: 16, right: 16 },
+  'bottom-left': { bottom: 16, left: 16 },
+  'top-right': { top: 16, right: 16 },
+  'top-left': { top: 16, left: 16 },
 };
 
 const formatTime = (timestamp: string): string => {
   const date = new Date(timestamp);
-  const timeStr = date.toLocaleTimeString("en-US", {
+  const timeStr = date.toLocaleTimeString('en-US', {
     hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
-  const ms = date.getMilliseconds().toString().padStart(3, "0");
+  const ms = date.getMilliseconds().toString().padStart(3, '0');
   return `${timeStr}.${ms}`;
 };
+
+// Icons as simple SVG components for better visual polish
+const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`ld-entry-chevron ${expanded ? 'ld-entry-chevron--expanded' : ''}`}
+    style={{
+      transition: 'transform 0.2s ease',
+      transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+    }}
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" x2="12" y1="15" y2="3" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18" />
+    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" x2="6" y1="6" y2="18" />
+    <line x1="6" x2="18" y1="6" y2="18" />
+  </svg>
+);
+
+const TerminalIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" x2="20" y1="19" y2="19" />
+  </svg>
+);
 
 interface LogEntryRowProps {
   entry: LogEntry;
@@ -55,223 +110,141 @@ interface LogEntryRowProps {
 const LogEntryRow = ({ entry, isExpanded, onToggle }: LogEntryRowProps) => {
   const hasDetails = entry.context || entry.errorStack || entry.metadata;
 
-  return (
-    <div
-      style={{
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: levelBgColors[entry.level],
-      }}
-    >
-      <div
-        onClick={hasDetails ? onToggle : undefined}
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          padding: "8px 12px",
-          gap: "8px",
-          cursor: hasDetails ? "pointer" : "default",
-          fontSize: "12px",
-          fontFamily:
-            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-        }}
-      >
-        <span
-          style={{
-            color: "#9ca3af",
-            flexShrink: 0,
-            fontSize: "11px",
-          }}
-        >
-          {formatTime(entry.timestamp)}
-        </span>
-        <span
-          style={{
-            backgroundColor: levelColors[entry.level],
-            color: "white",
-            padding: "1px 6px",
-            borderRadius: "4px",
-            fontSize: "10px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            flexShrink: 0,
-          }}
-        >
-          {entry.level}
-        </span>
-        {entry.loggerName && (
-          <span
-            style={{
-              backgroundColor: "#8b5cf6",
-              color: "white",
-              padding: "1px 6px",
-              borderRadius: "4px",
-              fontSize: "10px",
-              flexShrink: 0,
-            }}
-          >
-            {entry.loggerName}
-          </span>
-        )}
-        <span
-          style={{
-            color: entry.level === "error" ? "#dc2626" : "#374151",
-            flex: 1,
-            wordBreak: "break-word",
-          }}
-        >
-          {entry.message}
-        </span>
-        {hasDetails && (
-          <span style={{ color: "#9ca3af", flexShrink: 0 }}>
-            {isExpanded ? "▼" : "▶"}
-          </span>
-        )}
-      </div>
-      {isExpanded && hasDetails && (
-        <div
-          style={{
-            padding: "8px 12px 12px 12px",
-            backgroundColor: "#f9fafb",
-            borderTop: "1px solid #e5e7eb",
-          }}
-        >
-          {entry.context && (
-            <div
-              style={{
-                marginBottom: entry.errorStack || entry.metadata ? "8px" : 0,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Context
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: "8px",
-                  backgroundColor: "#1f2937",
-                  color: "#e5e7eb",
-                  borderRadius: "4px",
-                  fontSize: "11px",
-                  overflow: "auto",
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                  textAlign: "left",
-                }}
-              >
-                {JSON.stringify(entry.context, null, 2)}
-              </pre>
-            </div>
-          )}
-          {entry.metadata && (
-            <div style={{ marginBottom: entry.errorStack ? "8px" : 0 }}>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Metadata
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: "8px",
-                  backgroundColor: "#1f2937",
-                  color: "#e5e7eb",
-                  borderRadius: "4px",
-                  fontSize: "11px",
-                  overflow: "auto",
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                  textAlign: "left",
-                }}
-              >
-                {JSON.stringify(entry.metadata, null, 2)}
-              </pre>
-            </div>
-          )}
-          {entry.errorStack && (
-            <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Stack Trace
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: "8px",
-                  backgroundColor: "#fef2f2",
-                  color: "#991b1b",
-                  borderRadius: "4px",
-                  fontSize: "10px",
-                  overflow: "auto",
-                  whiteSpace: "pre-wrap",
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                  textAlign: "left",
-                }}
-              >
-                {entry.errorStack}
-              </pre>
-            </div>
-          )}
+  const detailsContent = isExpanded && hasDetails && (
+    <div className="ld-details">
+      {entry.context && (
+        <div className="ld-details-section">
+          <div className="ld-details-label">
+            <span>Context</span>
+          </div>
+          <pre className="ld-details-pre">
+            {JSON.stringify(entry.context, null, 2)}
+          </pre>
+        </div>
+      )}
+      {entry.metadata && (
+        <div className="ld-details-section">
+          <div className="ld-details-label">
+            <span>Metadata</span>
+          </div>
+          <pre className="ld-details-pre">
+            {JSON.stringify(entry.metadata, null, 2)}
+          </pre>
+        </div>
+      )}
+      {entry.errorStack && (
+        <div className="ld-details-section">
+          <div className="ld-details-label">
+            <span>Stack Trace</span>
+          </div>
+          <pre className="ld-details-pre ld-details-pre--stack">
+            {entry.errorStack}
+          </pre>
         </div>
       )}
     </div>
   );
+
+  // Animate details expand/collapse
+  const animatedDetails = (
+    <AnimatePresence>
+      {isExpanded && hasDetails && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ overflow: 'hidden' }}
+        >
+          {detailsContent}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  return (
+    <div className={`ld-entry ld-entry--${entry.level}`}>
+      <div
+        onClick={hasDetails ? onToggle : undefined}
+        className={`ld-entry-row ${!hasDetails ? 'ld-entry-row--no-details' : ''}`}
+      >
+        <span className="ld-entry-time">{formatTime(entry.timestamp)}</span>
+        <span className={`ld-badge ld-badge--${entry.level}`}>{entry.level}</span>
+        {entry.loggerName && (
+          <span className="ld-badge ld-badge--logger">{entry.loggerName}</span>
+        )}
+        <span className="ld-entry-message">{entry.message}</span>
+        {hasDetails && <ChevronIcon expanded={isExpanded} />}
+      </div>
+      {animatedDetails}
+    </div>
+  );
 };
 
+const defaultKeyboardShortcut = { key: 'd', metaKey: true, shiftKey: true };
+
 export const LogDevTools = ({
-  position = "bottom-right",
+  position = 'bottom-right',
   defaultCollapsed = true,
+  defaultVisible = false,
   maxHeight = 400,
+  className = '',
   style,
+  keyboardShortcut = defaultKeyboardShortcut,
 }: LogDevToolsProps) => {
   const logger = useLoggerContext();
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [isVisible, setIsVisible] = useState(defaultVisible);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [filter, setFilter] = useState<LogLevel | "all">("all");
-  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<LogLevel | 'all'>('all');
+  const [search, setSearch] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const logsEndRef = useRef<HTMLDivElement>(null);
 
+  // Inject styles on mount
+  useEffect(() => {
+    injectStyles();
+  }, []);
+
+  // Keyboard shortcut to toggle visibility
+  useEffect(() => {
+    if (keyboardShortcut === false) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const shortcut = keyboardShortcut;
+      
+      // Check if the pressed key matches the shortcut
+      const keyMatches = e.key.toLowerCase() === shortcut.key.toLowerCase();
+      const metaMatches = shortcut.metaKey ? (e.metaKey || e.ctrlKey) : true; // metaKey = Cmd on Mac, Ctrl on Windows
+      const ctrlMatches = shortcut.ctrlKey ? e.ctrlKey : true;
+      const shiftMatches = shortcut.shiftKey ? e.shiftKey : !e.shiftKey;
+      const altMatches = shortcut.altKey ? e.altKey : !e.altKey;
+
+      if (keyMatches && metaMatches && ctrlMatches && shiftMatches && altMatches) {
+        e.preventDefault();
+        setIsVisible((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [keyboardShortcut]);
+
   // Subscribe to new logs
   useEffect(() => {
-    // Get initial logs
     setLogs(logger.getLogs());
-
-    // Subscribe to updates
     const unsubscribe = logger.subscribe((entry) => {
       setLogs((prev) => [...prev, entry]);
     });
-
     return unsubscribe;
   }, [logger]);
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
-    if (!isCollapsed && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (!isCollapsed && isVisible && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [logs, isCollapsed]);
+  }, [logs, isCollapsed, isVisible]);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -285,253 +258,193 @@ export const LogDevTools = ({
     });
   }, []);
 
-  const filteredLogs = logs.filter((log) => {
-    if (filter !== "all" && log.level !== filter) return false;
-    if (search) {
-      const searchLower = search.toLowerCase();
-      return (
-        log.message.toLowerCase().includes(searchLower) ||
-        (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
-      );
-    }
-    return true;
-  });
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      if (filter !== 'all' && log.level !== filter) return false;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        return (
+          log.message.toLowerCase().includes(searchLower) ||
+          (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
+        );
+      }
+      return true;
+    });
+  }, [logs, filter, search]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     logger.clearLogs();
     setLogs([]);
     setExpandedIds(new Set());
-  };
+  }, [logger]);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     logger.downloadLog();
+  }, [logger]);
+
+  const errorCount = useMemo(() => logs.filter((l) => l.level === 'error').length, [logs]);
+  const warnCount = useMemo(() => logs.filter((l) => l.level === 'warn').length, [logs]);
+
+  // Don't render anything if not visible (after ALL hooks)
+  if (!isVisible) {
+    return null;
+  }
+
+  const containerStyle: React.CSSProperties = {
+    position: 'fixed',
+    zIndex: 99999,
+    ...positionStyles[position],
+    ...style,
   };
 
-  const errorCount = logs.filter((l) => l.level === "error").length;
-  const warnCount = logs.filter((l) => l.level === "warn").length;
+  // Get transform origin based on position for expand animation
+  const getTransformOrigin = () => {
+    switch (position) {
+      case 'bottom-right': return 'bottom right';
+      case 'bottom-left': return 'bottom left';
+      case 'top-right': return 'top right';
+      case 'top-left': return 'top left';
+      default: return 'bottom right';
+    }
+  };
+
+  const triggerContent = (
+    <>
+      <TerminalIcon />
+      <span>Logs</span>
+      <span className="ld-trigger-count">{logs.length}</span>
+      {errorCount > 0 && (
+        <span className="ld-trigger-badge ld-trigger-badge--error">{errorCount}</span>
+      )}
+      {warnCount > 0 && (
+        <span className="ld-trigger-badge ld-trigger-badge--warn">{warnCount}</span>
+      )}
+    </>
+  );
+
+  const panelContent = (
+    <>
+      {/* Header */}
+      <div className="ld-header">
+        <div className="ld-header-title">
+          <TerminalIcon />
+          <span className="ld-header-text">LogDumper</span>
+          <span className="ld-header-count">{filteredLogs.length}</span>
+        </div>
+        <div className="ld-header-actions">
+          <button
+            onClick={handleDownload}
+            className="ld-btn"
+            title="Download logs as JSON"
+          >
+            <DownloadIcon />
+          </button>
+          <button
+            onClick={handleClear}
+            className="ld-btn ld-btn--danger"
+            title="Clear all logs"
+          >
+            <TrashIcon />
+          </button>
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="ld-btn"
+            title="Collapse panel"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div className="ld-toolbar">
+        <input
+          type="text"
+          placeholder="Search logs..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ld-search"
+        />
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as LogLevel | 'all')}
+          className="ld-select"
+        >
+          <option value="all">All levels</option>
+          <option value="debug">Debug</option>
+          <option value="info">Info</option>
+          <option value="warn">Warn</option>
+          <option value="error">Error</option>
+        </select>
+      </div>
+
+      {/* Logs */}
+      <div className="ld-logs" style={{ maxHeight }}>
+        {filteredLogs.length === 0 ? (
+          <div className="ld-empty">
+            <div className="ld-empty-icon">📋</div>
+            <div className="ld-empty-text">
+              {logs.length === 0 ? 'No logs yet' : 'No logs match your filters'}
+            </div>
+          </div>
+        ) : (
+          filteredLogs.map((entry) => (
+            <LogEntryRow
+              key={entry.id}
+              entry={entry}
+              isExpanded={expandedIds.has(entry.id)}
+              onToggle={() => toggleExpanded(entry.id)}
+            />
+          ))
+        )}
+        <div ref={logsEndRef} />
+      </div>
+    </>
+  );
+
+  const transformOrigin = getTransformOrigin();
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        zIndex: 99999,
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        ...positionStyles[position],
-        ...style,
-      }}
-    >
-      {/* Collapsed button */}
-      {isCollapsed ? (
-        <button
-          onClick={() => setIsCollapsed(false)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 12px",
-            backgroundColor: "#1f2937",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "12px",
-            fontWeight: 500,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-          }}
-        >
-          <span>📋</span>
-          <span>Logs ({logs.length})</span>
-          {errorCount > 0 && (
-            <span
-              style={{
-                backgroundColor: "#ef4444",
-                padding: "2px 6px",
-                borderRadius: "10px",
-                fontSize: "10px",
-              }}
-            >
-              {errorCount}
-            </span>
-          )}
-          {warnCount > 0 && (
-            <span
-              style={{
-                backgroundColor: "#f59e0b",
-                padding: "2px 6px",
-                borderRadius: "10px",
-                fontSize: "10px",
-              }}
-            >
-              {warnCount}
-            </span>
-          )}
-        </button>
-      ) : (
-        /* Expanded panel */
-        <div
-          style={{
-            width: 450,
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.15)",
-            overflow: "hidden",
-            border: "1px solid #e5e7eb",
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "12px 16px",
-              backgroundColor: "#1f2937",
-              color: "white",
+    <div className={`ld-devtools ${className}`} style={containerStyle}>
+      <AnimatePresence mode="wait" initial={false}>
+        {isCollapsed ? (
+          <motion.button
+            key="trigger"
+            className="ld-trigger"
+            onClick={() => setIsCollapsed(false)}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ 
+              duration: 0.15,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              transformOrigin,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "14px" }}>📋</span>
-              <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                LogDumper DevTools
-              </span>
-              <span
-                style={{
-                  backgroundColor: "#374151",
-                  padding: "2px 8px",
-                  borderRadius: "10px",
-                  fontSize: "11px",
-                }}
-              >
-                {filteredLogs.length}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button
-                onClick={handleDownload}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#374151",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                }}
-                title="Download logs"
-              >
-                ⬇️
-              </button>
-              <button
-                onClick={handleClear}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#374151",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                }}
-                title="Clear logs"
-              >
-                🗑️
-              </button>
-              <button
-                onClick={() => setIsCollapsed(true)}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#374151",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                }}
-                title="Collapse"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              padding: "8px 12px",
-              backgroundColor: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+            {triggerContent}
+          </motion.button>
+        ) : (
+          <motion.div
+            key="panel"
+            className="ld-panel"
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 5 }}
+            transition={{ 
+              duration: 0.2,
+              ease: [0.4, 0, 0.2, 1],
             }}
+            style={{ transformOrigin }}
           >
-            <input
-              type="text"
-              placeholder="Search logs..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "6px 10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "12px",
-                outline: "none",
-              }}
-            />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as LogLevel | "all")}
-              style={{
-                padding: "6px 10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "12px",
-                backgroundColor: "white",
-                cursor: "pointer",
-              }}
-            >
-              <option value="all">All levels</option>
-              <option value="debug">Debug</option>
-              <option value="info">Info</option>
-              <option value="warn">Warn</option>
-              <option value="error">Error</option>
-            </select>
-          </div>
-
-          {/* Logs list */}
-          <div
-            style={{
-              maxHeight,
-              overflowY: "auto",
-            }}
-          >
-            {filteredLogs.length === 0 ? (
-              <div
-                style={{
-                  padding: "40px 20px",
-                  textAlign: "center",
-                  color: "#9ca3af",
-                  fontSize: "13px",
-                }}
-              >
-                {logs.length === 0
-                  ? "No logs yet"
-                  : "No logs match your filters"}
-              </div>
-            ) : (
-              filteredLogs.map((entry) => (
-                <LogEntryRow
-                  key={entry.id}
-                  entry={entry}
-                  isExpanded={expandedIds.has(entry.id)}
-                  onToggle={() => toggleExpanded(entry.id)}
-                />
-              ))
-            )}
-            <div ref={logsEndRef} />
-          </div>
-        </div>
-      )}
+            {panelContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
