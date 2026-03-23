@@ -27,16 +27,21 @@ export interface LoggerOptions {
 }
 
 export type LogSubscriber<TContext = Record<string, unknown>> = (entry: LogEntry<TContext>) => void;
+export type ClearSubscriber = () => void;
+
+// Generate a UUID using crypto.randomUUID() when available, with fallback
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+};
 
 // Generate a unique session ID
-const generateSessionId = (): string => {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-};
+const generateSessionId = (): string => `session_${generateUUID()}`;
 
 // Generate a unique log entry ID
-const generateLogId = (): string => {
-  return `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-};
+const generateLogId = (): string => `log_${generateUUID()}`;
 
 // Singleton session ID for the current browser session
 let currentSessionId: string | null = null;
@@ -63,9 +68,16 @@ export class Logger<TContext = Record<string, unknown>> {
   private captureMetadata: boolean;
   private name?: string;
   private subscribers: Set<LogSubscriber<TContext>> = new Set();
+  private clearSubscribers: Set<ClearSubscriber> = new Set();
 
   constructor(options?: LoggerOptions) {
-    this.maxLogs = options?.maxLogs;
+    if (options?.maxLogs !== undefined) {
+      if (!Number.isInteger(options.maxLogs) || options.maxLogs <= 0) {
+        console.warn('[LogDumper] maxLogs must be a positive integer, ignoring invalid value:', options.maxLogs);
+      } else {
+        this.maxLogs = options.maxLogs;
+      }
+    }
     this.forwardToConsole = options?.forwardToConsole ?? false;
     this.captureMetadata = options?.captureMetadata ?? true;
     this.name = options?.name;
@@ -216,6 +228,7 @@ export class Logger<TContext = Record<string, unknown>> {
       result = result.filter(
         (log) =>
           log.message.toLowerCase().includes(searchLower) ||
+          (log.loggerName && log.loggerName.toLowerCase().includes(searchLower)) ||
           (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
       );
     }
@@ -225,6 +238,20 @@ export class Logger<TContext = Record<string, unknown>> {
 
   clearLogs() {
     this.logs = [];
+    this.clearSubscribers.forEach((subscriber) => {
+      try {
+        subscriber();
+      } catch (e) {
+        console.error('Log clear subscriber error:', e);
+      }
+    });
+  }
+
+  subscribeToClear(subscriber: ClearSubscriber): () => void {
+    this.clearSubscribers.add(subscriber);
+    return () => {
+      this.clearSubscribers.delete(subscriber);
+    };
   }
 
   downloadLog(filename = 'log-dump.json') {
@@ -252,5 +279,24 @@ export class Logger<TContext = Record<string, unknown>> {
 
   getMaxLogs(): number | undefined {
     return this.maxLogs;
+  }
+
+  setForwardToConsole(value: boolean) {
+    this.forwardToConsole = value;
+  }
+
+  setCaptureMetadata(value: boolean) {
+    this.captureMetadata = value;
+  }
+
+  setMaxLogs(value: number | undefined) {
+    if (value !== undefined) {
+      if (!Number.isInteger(value) || value <= 0) {
+        console.warn('[LogDumper] maxLogs must be a positive integer, ignoring invalid value:', value);
+        return;
+      }
+    }
+    this.maxLogs = value;
+    this.trimLogs();
   }
 }

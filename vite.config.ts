@@ -5,35 +5,24 @@ export default defineConfig({
   build: {
     lib: {
       entry: "src/index.ts",
-      name: "LogDumper",
-      fileName: (format) => `index.${format}.js`,
-      formats: ["es", "umd"],
+      formats: ["es"],
     },
     outDir: "dist",
     rollupOptions: {
-      // Externalize all React-related packages to avoid bundling them
       external: [
         "react",
         "react-dom",
         "react/jsx-runtime",
         "motion/react",
-        "motion",
       ],
       output: {
-        globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
-          "react/jsx-runtime": "jsxRuntime",
-          "motion/react": "MotionReact",
-          motion: "Motion",
-        },
+        preserveModules: true,
+        preserveModulesRoot: "src",
+        entryFileNames: "[name].js",
       },
       onwarn(warning, warn) {
-        // Suppress "use client" directive warnings from framer-motion
-        // These are harmless Next.js directives that are safely ignored when bundling
         if (
-          (warning.code === "MODULE_LEVEL_DIRECTIVE" ||
-            warning.id?.includes("framer-motion")) &&
+          warning.code === "MODULE_LEVEL_DIRECTIVE" &&
           warning.message?.includes("use client")
         ) {
           return;

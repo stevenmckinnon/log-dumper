@@ -9,7 +9,7 @@ export interface LogDevToolsProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   /** Initial collapsed state when visible */
   defaultCollapsed?: boolean;
-  /** 
+  /**
    * Whether the DevTools panel is visible by default.
    * Use keyboard shortcut to toggle visibility.
    * @default false
@@ -23,7 +23,7 @@ export interface LogDevToolsProps {
   style?: React.CSSProperties;
   /** Theme variant */
   theme?: 'dark' | 'light';
-  /** 
+  /**
    * Keyboard shortcut to toggle visibility of the DevTools.
    * Set to false to disable keyboard shortcut.
    * @default { key: 'd', metaKey: true, shiftKey: true } (Cmd/Ctrl+Shift+D)
@@ -38,6 +38,13 @@ const positionStyles: Record<string, React.CSSProperties> = {
   'top-left': { top: 16, left: 16 },
 };
 
+const transformOriginMap: Record<string, string> = {
+  'bottom-right': 'bottom right',
+  'bottom-left': 'bottom left',
+  'top-right': 'top right',
+  'top-left': 'top left',
+};
+
 const formatTime = (timestamp: string): string => {
   const date = new Date(timestamp);
   const timeStr = date.toLocaleTimeString('en-US', {
@@ -50,7 +57,8 @@ const formatTime = (timestamp: string): string => {
   return `${timeStr}.${ms}`;
 };
 
-// Icons as simple SVG components for better visual polish
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <svg
     width="12"
@@ -101,6 +109,8 @@ const TerminalIcon = () => (
   </svg>
 );
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 interface LogEntryRowProps {
   entry: LogEntry;
   isExpanded: boolean;
@@ -109,58 +119,6 @@ interface LogEntryRowProps {
 
 const LogEntryRow = ({ entry, isExpanded, onToggle }: LogEntryRowProps) => {
   const hasDetails = entry.context || entry.errorStack || entry.metadata;
-
-  const detailsContent = isExpanded && hasDetails && (
-    <div className="ld-details">
-      {entry.context && (
-        <div className="ld-details-section">
-          <div className="ld-details-label">
-            <span>Context</span>
-          </div>
-          <pre className="ld-details-pre">
-            {JSON.stringify(entry.context, null, 2)}
-          </pre>
-        </div>
-      )}
-      {entry.metadata && (
-        <div className="ld-details-section">
-          <div className="ld-details-label">
-            <span>Metadata</span>
-          </div>
-          <pre className="ld-details-pre">
-            {JSON.stringify(entry.metadata, null, 2)}
-          </pre>
-        </div>
-      )}
-      {entry.errorStack && (
-        <div className="ld-details-section">
-          <div className="ld-details-label">
-            <span>Stack Trace</span>
-          </div>
-          <pre className="ld-details-pre ld-details-pre--stack">
-            {entry.errorStack}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
-
-  // Animate details expand/collapse
-  const animatedDetails = (
-    <AnimatePresence>
-      {isExpanded && hasDetails && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          style={{ overflow: 'hidden' }}
-        >
-          {detailsContent}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
 
   return (
     <div className={`ld-entry ld-entry--${entry.level}`}>
@@ -176,10 +134,160 @@ const LogEntryRow = ({ entry, isExpanded, onToggle }: LogEntryRowProps) => {
         <span className="ld-entry-message">{entry.message}</span>
         {hasDetails && <ChevronIcon expanded={isExpanded} />}
       </div>
-      {animatedDetails}
+      <AnimatePresence>
+        {isExpanded && hasDetails && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="ld-details">
+              {entry.context && (
+                <div className="ld-details-section">
+                  <div className="ld-details-label"><span>Context</span></div>
+                  <pre className="ld-details-pre">{JSON.stringify(entry.context, null, 2)}</pre>
+                </div>
+              )}
+              {entry.metadata && (
+                <div className="ld-details-section">
+                  <div className="ld-details-label"><span>Metadata</span></div>
+                  <pre className="ld-details-pre">{JSON.stringify(entry.metadata, null, 2)}</pre>
+                </div>
+              )}
+              {entry.errorStack && (
+                <div className="ld-details-section">
+                  <div className="ld-details-label"><span>Stack Trace</span></div>
+                  <pre className="ld-details-pre ld-details-pre--stack">{entry.errorStack}</pre>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+interface PanelHeaderProps {
+  count: number;
+  onDownload: () => void;
+  onClear: () => void;
+  onCollapse: () => void;
+}
+
+const PanelHeader = ({ count, onDownload, onClear, onCollapse }: PanelHeaderProps) => (
+  <div className="ld-header">
+    <div className="ld-header-title">
+      <TerminalIcon />
+      <span className="ld-header-text">LogDumper</span>
+      <span className="ld-header-count">{count}</span>
+    </div>
+    <div className="ld-header-actions">
+      <button onClick={onDownload} className="ld-btn" title="Download logs as JSON">
+        <DownloadIcon />
+      </button>
+      <button onClick={onClear} className="ld-btn ld-btn--danger" title="Clear all logs">
+        <TrashIcon />
+      </button>
+      <button onClick={onCollapse} className="ld-btn" title="Collapse panel">
+        <CloseIcon />
+      </button>
+    </div>
+  </div>
+);
+
+interface PanelToolbarProps {
+  search: string;
+  filter: LogLevel | 'all';
+  onSearchChange: (value: string) => void;
+  onFilterChange: (value: LogLevel | 'all') => void;
+}
+
+const PanelToolbar = ({ search, filter, onSearchChange, onFilterChange }: PanelToolbarProps) => (
+  <div className="ld-toolbar">
+    <input
+      type="text"
+      placeholder="Search logs..."
+      value={search}
+      onChange={(e) => onSearchChange(e.target.value)}
+      className="ld-search"
+    />
+    <select
+      value={filter}
+      onChange={(e) => onFilterChange(e.target.value as LogLevel | 'all')}
+      className="ld-select"
+    >
+      <option value="all">All levels</option>
+      <option value="debug">Debug</option>
+      <option value="info">Info</option>
+      <option value="warn">Warn</option>
+      <option value="error">Error</option>
+    </select>
+  </div>
+);
+
+interface LogListProps {
+  logs: LogEntry[];
+  filteredLogs: LogEntry[];
+  expandedIds: Set<string>;
+  maxHeight: number;
+  logsEndRef: React.RefObject<HTMLDivElement>;
+  onToggleExpand: (id: string) => void;
+}
+
+const LogList = ({ logs, filteredLogs, expandedIds, maxHeight, logsEndRef, onToggleExpand }: LogListProps) => (
+  <div className="ld-logs" style={{ maxHeight }}>
+    {filteredLogs.length === 0 ? (
+      <div className="ld-empty">
+        <div className="ld-empty-icon">📋</div>
+        <div className="ld-empty-text">
+          {logs.length === 0 ? 'No logs yet' : 'No logs match your filters'}
+        </div>
+      </div>
+    ) : (
+      filteredLogs.map((entry) => (
+        <LogEntryRow
+          key={entry.id}
+          entry={entry}
+          isExpanded={expandedIds.has(entry.id)}
+          onToggle={() => onToggleExpand(entry.id)}
+        />
+      ))
+    )}
+    <div ref={logsEndRef} />
+  </div>
+);
+
+interface TriggerButtonProps {
+  logCount: number;
+  errorCount: number;
+  warnCount: number;
+  transformOrigin: string;
+  onClick: () => void;
+}
+
+const TriggerButton = ({ logCount, errorCount, warnCount, transformOrigin, onClick }: TriggerButtonProps) => (
+  <motion.button
+    key="trigger"
+    className="ld-trigger"
+    onClick={onClick}
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.8 }}
+    transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+    style={{ display: 'flex', alignItems: 'center', gap: '8px', transformOrigin }}
+  >
+    <TerminalIcon />
+    <span>Logs</span>
+    <span className="ld-trigger-count">{logCount}</span>
+    {errorCount > 0 && <span className="ld-trigger-badge ld-trigger-badge--error">{errorCount}</span>}
+    {warnCount > 0 && <span className="ld-trigger-badge ld-trigger-badge--warn">{warnCount}</span>}
+  </motion.button>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const defaultKeyboardShortcut = { key: 'd', metaKey: true, shiftKey: true };
 
@@ -202,10 +310,7 @@ export const LogDevTools = ({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  // Inject styles on mount
-  useEffect(() => {
-    injectStyles();
-  }, []);
+  useEffect(() => { injectStyles(); }, []);
 
   // Keyboard shortcut to toggle visibility
   useEffect(() => {
@@ -213,15 +318,11 @@ export const LogDevTools = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const shortcut = keyboardShortcut;
-      
-      // Check if the pressed key matches the shortcut
       const keyMatches = e.key.toLowerCase() === shortcut.key.toLowerCase();
       // metaKey is cross-platform: Cmd on Mac, Ctrl on Windows
-      const metaMatches = shortcut.metaKey === undefined 
-        ? true 
-        : shortcut.metaKey 
-          ? (e.metaKey || e.ctrlKey) 
-          : (!e.metaKey && !e.ctrlKey);
+      const metaMatches = shortcut.metaKey === undefined
+        ? true
+        : shortcut.metaKey ? (e.metaKey || e.ctrlKey) : (!e.metaKey && !e.ctrlKey);
       const ctrlMatches = shortcut.ctrlKey === undefined ? true : shortcut.ctrlKey === e.ctrlKey;
       const shiftMatches = shortcut.shiftKey === undefined ? true : shortcut.shiftKey === e.shiftKey;
       const altMatches = shortcut.altKey === undefined ? true : shortcut.altKey === e.altKey;
@@ -236,13 +337,20 @@ export const LogDevTools = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [keyboardShortcut]);
 
-  // Subscribe to new logs
+  // Subscribe to new logs and clear events
   useEffect(() => {
     setLogs(logger.getLogs());
     const unsubscribe = logger.subscribe((entry) => {
       setLogs((prev) => [...prev, entry]);
     });
-    return unsubscribe;
+    const unsubscribeClear = logger.subscribeToClear(() => {
+      setLogs([]);
+      setExpandedIds(new Set());
+    });
+    return () => {
+      unsubscribe();
+      unsubscribeClear();
+    };
   }, [logger]);
 
   // Auto-scroll to bottom when new logs arrive
@@ -255,11 +363,8 @@ export const LogDevTools = ({
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -271,6 +376,7 @@ export const LogDevTools = ({
         const searchLower = search.toLowerCase();
         return (
           log.message.toLowerCase().includes(searchLower) ||
+          (log.loggerName && log.loggerName.toLowerCase().includes(searchLower)) ||
           (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
         );
       }
@@ -278,19 +384,13 @@ export const LogDevTools = ({
     });
   }, [logs, filter, search]);
 
-  const handleClear = useCallback(() => {
-    logger.clearLogs();
-    setLogs([]);
-    setExpandedIds(new Set());
-  }, [logger]);
-
-  const handleDownload = useCallback(() => {
-    logger.downloadLog();
-  }, [logger]);
+  const handleClear = useCallback(() => logger.clearLogs(), [logger]);
+  const handleDownload = useCallback(() => logger.downloadLog(), [logger]);
 
   const errorCount = useMemo(() => logs.filter((l) => l.level === 'error').length, [logs]);
   const warnCount = useMemo(() => logs.filter((l) => l.level === 'warn').length, [logs]);
 
+  const transformOrigin = transformOriginMap[position] ?? 'bottom right';
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
     zIndex: 99999,
@@ -298,147 +398,21 @@ export const LogDevTools = ({
     ...style,
   };
 
-  // Get transform origin based on position for expand animation
-  const getTransformOrigin = () => {
-    switch (position) {
-      case 'bottom-right': return 'bottom right';
-      case 'bottom-left': return 'bottom left';
-      case 'top-right': return 'top right';
-      case 'top-left': return 'top left';
-      default: return 'bottom right';
-    }
-  };
-
-  const triggerContent = (
-    <>
-      <TerminalIcon />
-      <span>Logs</span>
-      <span className="ld-trigger-count">{logs.length}</span>
-      {errorCount > 0 && (
-        <span className="ld-trigger-badge ld-trigger-badge--error">{errorCount}</span>
-      )}
-      {warnCount > 0 && (
-        <span className="ld-trigger-badge ld-trigger-badge--warn">{warnCount}</span>
-      )}
-    </>
-  );
-
-  const panelContent = (
-    <>
-      {/* Header */}
-      <div className="ld-header">
-        <div className="ld-header-title">
-          <TerminalIcon />
-          <span className="ld-header-text">LogDumper</span>
-          <span className="ld-header-count">{filteredLogs.length}</span>
-        </div>
-        <div className="ld-header-actions">
-          <button
-            onClick={handleDownload}
-            className="ld-btn"
-            title="Download logs as JSON"
-          >
-            <DownloadIcon />
-          </button>
-          <button
-            onClick={handleClear}
-            className="ld-btn ld-btn--danger"
-            title="Clear all logs"
-          >
-            <TrashIcon />
-          </button>
-          <button
-            onClick={() => setIsCollapsed(true)}
-            className="ld-btn"
-            title="Collapse panel"
-          >
-            <CloseIcon />
-          </button>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div className="ld-toolbar">
-        <input
-          type="text"
-          placeholder="Search logs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="ld-search"
-        />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as LogLevel | 'all')}
-          className="ld-select"
-        >
-          <option value="all">All levels</option>
-          <option value="debug">Debug</option>
-          <option value="info">Info</option>
-          <option value="warn">Warn</option>
-          <option value="error">Error</option>
-        </select>
-      </div>
-
-      {/* Logs */}
-      <div className="ld-logs" style={{ maxHeight }}>
-        {filteredLogs.length === 0 ? (
-          <div className="ld-empty">
-            <div className="ld-empty-icon">📋</div>
-            <div className="ld-empty-text">
-              {logs.length === 0 ? 'No logs yet' : 'No logs match your filters'}
-            </div>
-          </div>
-        ) : (
-          filteredLogs.map((entry) => (
-            <LogEntryRow
-              key={entry.id}
-              entry={entry}
-              isExpanded={expandedIds.has(entry.id)}
-              onToggle={() => toggleExpanded(entry.id)}
-            />
-          ))
-        )}
-        <div ref={logsEndRef} />
-      </div>
-    </>
-  );
-
-  const transformOrigin = getTransformOrigin();
-
-  // Always render the container to keep component mounted (for keyboard listener)
-  // Conditionally render content based on isVisible
   return (
-    <div 
-      className={`ld-devtools ld-devtools--${theme} ${className}`} 
-      style={{
-        ...containerStyle,
-        // Hide completely when not visible, but keep component mounted
-        display: isVisible ? undefined : 'none',
-      }}
+    <div
+      className={`ld-devtools ld-devtools--${theme} ${className}`}
+      style={{ ...containerStyle, display: isVisible ? undefined : 'none' }}
     >
       {isVisible && (
         <AnimatePresence mode="wait" initial={false}>
           {isCollapsed ? (
-            <motion.button
-              key="trigger"
-              className="ld-trigger"
+            <TriggerButton
+              logCount={logs.length}
+              errorCount={errorCount}
+              warnCount={warnCount}
+              transformOrigin={transformOrigin}
               onClick={() => setIsCollapsed(false)}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ 
-                duration: 0.15,
-                ease: [0.4, 0, 0.2, 1],
-              }}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                transformOrigin,
-              }}
-            >
-              {triggerContent}
-            </motion.button>
+            />
           ) : (
             <motion.div
               key="panel"
@@ -446,13 +420,29 @@ export const LogDevTools = ({
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              transition={{ 
-                duration: 0.2,
-                ease: [0.4, 0, 0.2, 1],
-              }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
               style={{ transformOrigin }}
             >
-              {panelContent}
+              <PanelHeader
+                count={filteredLogs.length}
+                onDownload={handleDownload}
+                onClear={handleClear}
+                onCollapse={() => setIsCollapsed(true)}
+              />
+              <PanelToolbar
+                search={search}
+                filter={filter}
+                onSearchChange={setSearch}
+                onFilterChange={setFilter}
+              />
+              <LogList
+                logs={logs}
+                filteredLogs={filteredLogs}
+                expandedIds={expandedIds}
+                maxHeight={maxHeight}
+                logsEndRef={logsEndRef}
+                onToggleExpand={toggleExpanded}
+              />
             </motion.div>
           )}
         </AnimatePresence>

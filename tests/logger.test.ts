@@ -224,3 +224,120 @@ describe('Logger - Log Entry IDs', () => {
     expect(logs[0].id).not.toBe(logs[1].id);
   });
 });
+
+describe('Logger - Clear Subscriptions', () => {
+  let logger: Logger;
+  beforeEach(() => {
+    logger = new Logger();
+  });
+
+  it('notifies clear subscribers when clearLogs is called', () => {
+    const clearSubscriber = vi.fn();
+    logger.subscribeToClear(clearSubscriber);
+    logger.logAction('Test');
+    logger.clearLogs();
+    expect(clearSubscriber).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not notify clear subscribers on new log entries', () => {
+    const clearSubscriber = vi.fn();
+    logger.subscribeToClear(clearSubscriber);
+    logger.logAction('Test');
+    expect(clearSubscriber).not.toHaveBeenCalled();
+  });
+
+  it('can unsubscribe from clear events', () => {
+    const clearSubscriber = vi.fn();
+    const unsubscribe = logger.subscribeToClear(clearSubscriber);
+    logger.logAction('Test');
+    unsubscribe();
+    logger.clearLogs();
+    expect(clearSubscriber).not.toHaveBeenCalled();
+  });
+
+  it('handles clear subscriber errors gracefully', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const badSubscriber = vi.fn(() => { throw new Error('Clear subscriber error'); });
+    const goodSubscriber = vi.fn();
+
+    logger.subscribeToClear(badSubscriber);
+    logger.subscribeToClear(goodSubscriber);
+    logger.clearLogs();
+
+    expect(badSubscriber).toHaveBeenCalled();
+    expect(goodSubscriber).toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalled();
+
+    errorSpy.mockRestore();
+  });
+});
+
+describe('Logger - Search by Logger Name', () => {
+  it('filters logs by loggerName via search', () => {
+    const logger = new Logger({ name: 'auth' });
+    logger.logAction('User logged in');
+    logger.logAction('Token refreshed');
+
+    const results = logger.getLogs({ search: 'auth' });
+    expect(results.length).toBe(2);
+  });
+
+  it('search by loggerName is case-insensitive', () => {
+    const logger = new Logger({ name: 'PaymentService' });
+    logger.logAction('Payment processed');
+
+    expect(logger.getLogs({ search: 'payment' }).length).toBe(1);
+    expect(logger.getLogs({ search: 'PAYMENTSERVICE' }).length).toBe(1);
+  });
+
+  it('search does not match other loggers by name', () => {
+    const authLogger = new Logger({ name: 'auth' });
+    authLogger.logAction('Login');
+
+    const results = authLogger.getLogs({ search: 'payment' });
+    expect(results.length).toBe(0);
+  });
+});
+
+describe('Logger - maxLogs Validation', () => {
+  it('warns and ignores maxLogs of 0', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logger = new Logger({ maxLogs: 0 });
+    logger.logAction('A');
+    logger.logAction('B');
+    expect(logger.getLogs().length).toBe(2);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('warns and ignores negative maxLogs', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logger = new Logger({ maxLogs: -5 });
+    logger.logAction('A');
+    expect(logger.getLogs().length).toBe(1);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('warns and ignores non-integer maxLogs', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logger = new Logger({ maxLogs: 2.5 });
+    logger.logAction('A');
+    logger.logAction('B');
+    logger.logAction('C');
+    expect(logger.getLogs().length).toBe(3);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('accepts valid positive integer maxLogs', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logger = new Logger({ maxLogs: 2 });
+    logger.logAction('A');
+    logger.logAction('B');
+    logger.logAction('C');
+    expect(logger.getLogs().length).toBe(2);
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+});
