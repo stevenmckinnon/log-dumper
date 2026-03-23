@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLoggerContext, useNamedLoggersContext } from '../LogDumper/LogDumper';
+import { useLoggerContext, useNamedLoggersContext, getOrCreateNamedLogger } from '../LogDumper/LogDumper';
 import { Logger, LogLevel, LogEntry, LoggerOptions, LogSubscriber } from '../logger';
 
 export interface UseLoggerReturn<TContext = Record<string, unknown>> {
@@ -56,53 +56,31 @@ export const useLogger = <TContext = Record<string, unknown>>(
   const defaultLogger = useLoggerContext();
   const namedLoggers = useNamedLoggersContext();
 
-  // Determine which logger to use
-  const logger = useMemo(() => {
-    if (!name) {
-      return defaultLogger;
-    }
-
-    // Get or create a named logger instance
-    if (!namedLoggers.has(name)) {
-      namedLoggers.set(
-        name,
-        new Logger({
-          // Inherit from parent logger's configuration
-          forwardToConsole: defaultLogger.getForwardToConsole(),
-          captureMetadata: defaultLogger.getCaptureMetadata(),
-          maxLogs: defaultLogger.getMaxLogs(),
-          // Apply any explicit overrides from options
-          ...options,
-          // Always set the name for this named logger
-          name,
-        })
-      );
-    }
-
-    return namedLoggers.get(name)!;
+  // Determine which logger to use, cast once to the caller's TContext.
+  // The context stores Logger<Record<string,unknown>>; the cast is safe because
+  // TContext is constrained to be used only at call sites via UseLoggerReturn<TContext>.
+  const logger = useMemo<Logger<TContext>>(() => {
+    const raw = name
+      ? getOrCreateNamedLogger(name, options, namedLoggers, defaultLogger)
+      : defaultLogger;
+    return raw as unknown as Logger<TContext>;
   }, [name, defaultLogger, namedLoggers, options]);
 
   // Memoize the return object to prevent unnecessary re-renders
   return useMemo(() => ({
-    logAction: (message: string, context?: TContext, componentName?: string) => {
-      logger.logAction(message, context as Record<string, unknown>, componentName);
-    },
-    logError: (error: Error, context?: TContext, componentName?: string) => {
-      logger.logError(error, context as Record<string, unknown>, componentName);
-    },
-    logDebug: (message: string, context?: TContext, componentName?: string) => {
-      logger.logDebug(message, context as Record<string, unknown>, componentName);
-    },
-    logInfo: (message: string, context?: TContext, componentName?: string) => {
-      logger.logInfo(message, context as Record<string, unknown>, componentName);
-    },
-    logWarn: (message: string, context?: TContext, componentName?: string) => {
-      logger.logWarn(message, context as Record<string, unknown>, componentName);
-    },
-    getLogs: (filter) => logger.getLogs(filter) as LogEntry<TContext>[],
+    logAction: (message: string, context?: TContext, componentName?: string) =>
+      logger.logAction(message, context, componentName),
+    logError: (error: Error, context?: TContext, componentName?: string) =>
+      logger.logError(error, context, componentName),
+    logDebug: (message: string, context?: TContext, componentName?: string) =>
+      logger.logDebug(message, context, componentName),
+    logInfo: (message: string, context?: TContext, componentName?: string) =>
+      logger.logInfo(message, context, componentName),
+    logWarn: (message: string, context?: TContext, componentName?: string) =>
+      logger.logWarn(message, context, componentName),
+    getLogs: (filter) => logger.getLogs(filter),
     clearLogs: () => logger.clearLogs(),
     downloadLog: (filename?: string) => logger.downloadLog(filename),
-    subscribe: (subscriber: LogSubscriber<TContext>) => 
-      logger.subscribe(subscriber as LogSubscriber<Record<string, unknown>>),
+    subscribe: (subscriber: LogSubscriber<TContext>) => logger.subscribe(subscriber),
   }), [logger]);
 };
