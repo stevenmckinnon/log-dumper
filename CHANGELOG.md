@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.6
+
+### Patch Changes
+
+- 826fa78: Fixing dist folder
+
 ## 1.1.5
 
 ### Patch Changes
