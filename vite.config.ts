@@ -9,12 +9,7 @@ export default defineConfig({
     },
     outDir: "dist",
     rollupOptions: {
-      external: [
-        "react",
-        "react-dom",
-        "react/jsx-runtime",
-        "motion/react",
-      ],
+      external: ["react", "react-dom", "react/jsx-runtime", "motion/react"],
       output: {
         preserveModules: true,
         preserveModulesRoot: "src",
