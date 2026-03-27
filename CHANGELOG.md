@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.4
+
+### Patch Changes
+
+- Fix published package missing type declarations
+
+  Republish with correct build output — previous 1.1.3 release was published with an empty dist/index.d.ts before the rollupTypes fix was applied.
+
 ## 1.1.3
 
 ### Patch Changes
