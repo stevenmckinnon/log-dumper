@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.5
+
+### Patch Changes
+
+- 404e7e3: Trying to deploy latest
+
 ## 1.1.4
 
 ### Patch Changes
