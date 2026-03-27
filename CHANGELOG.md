@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.7
+
+### Patch Changes
+
+- 8632c09: Fixing build pipeline
+
 ## 1.1.6
 
 ### Patch Changes
