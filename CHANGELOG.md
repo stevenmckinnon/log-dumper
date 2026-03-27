@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.9
+
+### Patch Changes
+
+- 587a354: Claude assures me this will fix the types
+
 ## 1.1.8
 
 ### Patch Changes
