@@ -4,47 +4,9 @@
 
 ### Patch Changes
 
-- 587a354: Claude assures me this will fix the types
+- Fix TypeScript declarations not resolving for consumers
 
-## 1.1.8
-
-### Patch Changes
-
-- 3a337ea: Last attempt to fix types
-
-## 1.1.7
-
-### Patch Changes
-
-- 8632c09: Fixing build pipeline
-
-## 1.1.6
-
-### Patch Changes
-
-- 826fa78: Fixing dist folder
-
-## 1.1.5
-
-### Patch Changes
-
-- 404e7e3: Trying to deploy latest
-
-## 1.1.4
-
-### Patch Changes
-
-- Fix published package missing type declarations
-
-  Republish with correct build output — previous 1.1.3 release was published with an empty dist/index.d.ts before the rollupTypes fix was applied.
-
-## 1.1.3
-
-### Patch Changes
-
-- 6ab00df: Fix TypeScript types not resolving for consumers
-
-  Switched `vite-plugin-dts` from `insertTypesEntry` to `rollupTypes`, which bundles all declarations into a single `dist/index.d.ts`. Previously the file was empty and the actual types were output to `dist/src/`, making the package unusable in TypeScript projects.
+  Corrected build pipeline so that `.d.ts` files are emitted to `dist/` at the correct paths. Added `rootDir: "src"` to `tsconfig.json` and `files: ["dist"]` to `package.json` to ensure the published package includes all type declarations.
 
 ## 1.1.2
 
